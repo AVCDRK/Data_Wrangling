@@ -1,7 +1,7 @@
 ---
 title: "Data Wrangling - Part I"
-subtitle: "StatPREP R Workshops 2021"
-author: "Joe Roith"
+subtitle: "StatPREP R Workshops"
+author: "Your Name"
 output: html_document
 ---
 

@@ -1,0 +1,169 @@
+---
+title: "Learnr Tutorials"
+subtitle: "StatPREP R Workshops 2021"
+author: "Joe Roith"
+output: html_document
+---
+
+## Setting up a Tutorial
+
+Tutorials are created using the `learnr` package. Make sure you have it installed and loaded before creating one.
+
+```{r setup}
+# install.packages("learnr") # already installed for our project, just a reminder of the install code
+library(learnr)
+# also include any other packages you need for your tutorial in the setup code
+```
+
+A quick way to start a tutorial is to navigate to the toolbar and click File \> New File \> R Markdown \> From Template \> Interactive Tutorial. (If you don't see this option, reload the `learnr` package.) This will give you an example of how to write a tutorial.
+
+> Let's open a template to see what it looks like.
+
+Notice the YAML statement at the beginning, the one with metadata like `title:`. It contains two lines that are crucial for rendering the document into a tutorial:
+
+`output: learnr::tutorial`
+
+`runtime: shiny_prerendered`
+
+You can change the title, author, etc. in the YAML, but leave these two lines as they are. You should also notice you can no longer "Knit" the document, but you can "Run Document". Click that and see what happens.
+
+## This is a Header
+
+In an R Markdown document, using "\#" denotes headers. Fewer \#'s makes larger headers. Clicking the compass icon (visual markdown editor) in the top right corner of this document will give you a sense of the different header sizes below.
+
+# Largest header `# Largest header`
+
+## Second largest header `## Second largest header`
+
+###### Smallest header `###### Smallest header`
+
+You can go to Help \> Cheatsheets \> R Markdown Reference Guide in the tool bar to see more examples of formatting and styling in R Markdown files.
+
+These headers help to break a document into sections. They are also how we break interactive tutorials into sections. Every time you use two hashtags (`##`) you create a new topic (a new page/slide) in your tutorial and progress through them using the "Next Topic" button at the bottom of the page. It also creates an outline of topics on the left side of the tutorial for quick navigation.
+
+Within each topic, you can have subsections using three hashtags (`###`). If any topic has two or more subsections, it will progressively reveal them by clicking the "Next" button. This is helpful if you would like to break up your topics into smaller pieces or have students work through something and then show them a hint or answer.
+
+## Adding R chunks
+
+### Static R chunks
+
+By themselves, these tutorials can be very useful to give students a nice polished presentation of materials. But the thing that really sets them apart from just a regular slide show is the ability to include R. There are two ways to include R content in a tutorial. The first is just like we would in a normal R Markdown document. Adding an R chunk by using:
+
+```{r}
+
+```
+
+You can show code that is not evaluated, you can just show output from the code, and you can show both code and output this way. I find it useful for giving quick examples that I don't expect my students to play around with.
+
+### Interactive R chunks
+
+But the beauty of the learnr tutorials is the option to include live R boxes where students can write and execute their own code. These look very similar to regular R chunks but include one additional specification: `exercise = TRUE` in the curly braces.
+
+```{r sandbox, exercise = TRUE}
+
+```
+
+You can leave these chunks free of code for students to write their own from scratch, or you can pre-fill it with your own code for them to evaluate or change on their own. Just remember that this code will not be executed until the student clicks the play button in the tutorial. Here are some things to remember when using interactive R chunks in a tutorial.
+
+-   These chunks *need* to have unique names (like `sandbox` in the previous chunk). You'll get a warning if it is missing.
+
+-   Feel free to write code that would normally give an error and make students complete it before running. Like using a function and leaving the variable arguments blank.
+
+-   Provide hints for your code box by creating another R chunk using the same name with suffix `-hint`. You also need to omit `exercise = TRUE` for the hint.
+
+```{r sandbox-hint}
+# comments and code can provide help
+```
+
+-   There are options evaluate or "grade" student code in a tutorial. The `gradethis` package can see what students submit for their code and let them know whether it is correct or not. I haven't incorporated this into my tutorials yet, but find the concept very intriguing. [You can find more information here.](https://github.com/rstudio/gradethis)
+
+-   It's very important to remember that anything evaluated in an exercise box does not get saved to the global environment. So having a student read in a dataset in one box will not allow them to use that data in the next. Same with objects, or anything else they try to save. One simple solution to this is to include your import statement and any other important objects in the `{r setup}` chunk at the beginning of the document. Then make sure that students know to use the correct names when referring to things in the exercise.
+
+## Adding questions
+
+You can also add your own multiple choice and ranking questions to the tutorial as quick knowledge checks. This requires another uniquely named R chunk as well as the functions `quiz()` and `question()`. Take a look at the template we opened to see some examples of multiple choice questions. Pay special attention to the fact that all of the questions are nested inside of the quiz function. Be careful with your commas and parentheses (they can cause errors and big headaches for the best of us)! Again, here are some of my additional tips for questions:
+
+-   Include a `message =` within an `answer()` to show students a brief statement when they select that response. It's good to direct them towards the correct response or to give them a "Great job!" when they get it right.
+
+-   I like to mix up the answers and let students retry the question if they get it wrong. You can add `allow_retry = TRUE` and `random_answer_order = TRUE`
+
+```{r quiz}
+quiz(
+  question("What does geom_point create?",
+    answer("A boxplot"),
+    answer("A jittered plot", message = "Not quite"),
+    answer("A scatter plot", correct = TRUE, message = "Way to go!"),
+    answer("A pointless plot"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+There are a ton of other options to include in your learnr tutorial, like ranked questions, interactive shiny apps, and more. I use [this website](https://rstudio.github.io/learnr/index.html) as my go to when I have questions about creating a learnr tutorial.
+
+## Publishing
+
+If you plan on creating a tutorial to use in your class, then the biggest decision you need to make is how you will get it to your students. There are several different ways to do this and I will cover what I consider to be the 3 most practical.
+
+### Running locally from the .Rmd
+
+This is probably the simplest and most practical way to use learnr tutorials in your class, at least from the instructor's perspective. The concept is easy, if you can write an .Rmd file as a tutorial and get it to run on your machine, then you can share that file with your students to have them run it on theirs. I would recommend starting out this way if you'd like to test using tutorials in your classroom. It requires nothing beyond writing the document and showing students how to use it.
+
+**Pros**
+
+-   Free
+
+-   No knowledge of other software/programs needed
+
+-   Easy to share documents with students
+
+**Cons**
+
+-   Requires student to know how to open and run .Rmd files in RStudio. And requires all necessary packages to be installed.
+
+-   Student can see the source code and answers or get confused on which code is for class and which is just to make the tutorial run
+
+-   Updates/edits to tutorials require you to resend the document to student (and trust me, there are usually lots of edits)
+
+### Publish online using a shiny account
+
+This is currently what I do to have my students use the tutorials I create for class. It allows students to access the tutorial directly through a URL and is great for introducing them to R without even opening up an intimidating environment. In a typical semester I have student do a couple tutorials first before showing them RStudio. Then I usually ween them off of the tutorials so everything they do is in RStudio.
+
+This method does require a shiny account to publish your tutorials. Connecting your apps to shiny is fairly straight-forward and [this link provides steps](https://shiny.rstudio.com/articles/shinyapps.html). Once connected, you can run your tutorial and click the Publish button to launch your tutorials. But to reasonably use shiny as a method of hosting your tutorials, you will most likely need to pay for your account. [Link to pricing guide.](https://www.shinyapps.io/) For reference, I started with the Basic plan creating about 15 tutorials for two courses and around 90 students total per semester (this easily kept me under 500 hours). As other instructors decided to use my tutorials in their classes, I upgraded to a Standard plan that covers 6 courses and about 200 students each semester.
+
+Paying for this has forced me to get creative. I've used department funds, generous endowed chairs, internal professional development grants, StatPREP, and my own money. There's no doubt that this is a huge barrier to this method of publishing. If your school is willing to host an RStudio server, you may want to look into their willingness to host their own shiny server or RStudio Connect server which can provide a way to host tutorials for free. My current task is convincing my IT department to do this for me so I can't say how well it works yet...
+
+**Pros**
+
+-   Easy one-click access for students through a URL
+
+-   Relatively easy for instructor to publish and edit tutorials
+
+-   Can track overall usage of apps
+
+**Cons**
+
+-   Potentially very expensive based on number of apps and student hours
+
+-   The occasional troubleshooting can require more than basic R knowledge
+
+### Create a tutorial R package
+
+You can also create your own R package that houses your tutorials. Similar to sharing your .Rmd files with students, they will need to run the tutorial directly in RStudio. However, since the code lives in the package, they will not have access to answers or the additional code needed to write the tutorial. And while they are still opening RStudio for access, it is much more intuitive to launch than running an .Rmd doc. Students will just need to download and install your package (or it can be installed automatically through your school server or cloud project) and navigate to the Tutorial tab next to the Environment pane.
+
+This is my current back-up plan if and when my funding runs dry and my IT dept. is not willing to host a dedicated server. It does requires some additional knowledge of building an R package and linking it to a GitHub repository (which really isn't too difficult). [Here's a link for setting up a GitHub account and linking it with R.](https://happygitwithr.com/github-acct.html) [And here's one for building a package specifically for learnr tutorials.](https://education.rstudio.com/blog/2020/09/delivering-learnr-tutorials-in-a-package/)
+
+**Pros**
+
+-   Free, and no limit on number of apps or hours used
+
+-   Easy access for students within RStudio
+
+-   Edits and changes to tutorials only require a re-installation of package
+
+**Cons**
+
+-   More work to get the tutorials to students (figuring out GitHub and R package building)
+
+-   Can't track student usage

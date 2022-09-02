@@ -1,0 +1,247 @@
+---
+title: "Inference with Randomization"
+subtitle: "StatPREP R Workshops 2021"
+author: "Joe Roith"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(fivethirtyeight)
+library(tidyverse)
+library(infer)
+library(ggformula)
+library(mosaic)
+
+# From GitHub
+masc_infer <- read_csv("https://raw.githubusercontent.com/joeroith/Data/master/masc_infer.csv")
+sleep <- read_csv("https://raw.githubusercontent.com/joeroith/Data/master/SleepStudy.csv")
+
+# Or local if we want. Need to change file path once in RStudio Cloud project
+# masc_infer <- read_csv("~/StatPREP/StatPREP R Workshop/Data/masc_infer.csv")
+# sleep <- read_csv("../Data/SleepStudy.csv")
+```
+
+## Taking samples
+
+There are times when you may want to take a sample for a dataset that is read into RStudio. There are many different ways to take samples, but one is to use the slice command.
+
+Suppose you want to take a sample of size 50 from the sleep dataset and save this sample to a new dataset.
+
+```{r}
+sleep_sample <- #creates a new dataset
+  sleep %>% #uses the dataset sleep
+  slice_sample(n=50) #takes a random sample of size 50 and saving it in a new dataset
+```
+
+Suppose you want to take a stratified sample of size 40 from the sleep dataset using LarkOwl as the strata.
+
+```{r}
+sleep_strat <- #creates a new dataset for the stratified sample
+  sleep %>% #uses the dataset sleep
+  group_by(LarkOwl) %>% #Defines what variable defines the strata
+  slice_sample(n=40) #takes a random sample of size 40 from each stata
+```
+
+The command slice can take other sample types.
+
+```{r}
+?slice
+```
+
+## Inference without the theory
+
+One of the most prominent trends in statistics education is to ditch the theoretical distributions and abstract null distributions in favor of randomization and simulated distributions. A huge benefit of this approach is that there is no longer a need for students to rely on probability density functions or to use outdated tables. We can leverage the computing power of R to handle all of the hard work. The only thing students need to understand is the concept of a null distribution, where there is no effect/difference among the groups. Then we let R simulate what samples from that world would look like.
+
+### Comparing two proportions
+
+We will once again use the masculinity survey data from FiveThirtyEight, this time we will consider the following survey question: *As a man, would you say you think about your behavior at work differently in wake of #MeToo?*. We would like to know if the proportion of men who respond "Yes" to this question differs significantly for those who have children and those who do not.
+
+| Variable name | Description               |
+| :------------ | :------------------------ |
+| `kids`        | Has children, No children |
+| `behaveDiff`  | Yes, No                   |
+
+Before we get into the inference, let's take a quick look at the data. We're using a slightly different version of the data that includes the raw responses. A table and bar plot should be enough here.
+
+```{r}
+# Some wrangling needs to be performed to drop the missing and non-answers
+masc_props <- masc_infer %>%     # we'll call this masc_props to preserve the original data
+  filter(!is.na(behaveDiff), !is.na(kids)) %>%
+  filter(behaveDiff != "No answer")
+
+# Create a table of the proportions
+tally(behaveDiff ~ kids, data = masc_props, format = "proportion")
+
+# Create a segmented bar plot
+ggplot(masc_props, aes(x = kids, fill = behaveDiff)) + 
+  geom_bar(position = "fill") +
+  ggtitle("Do you think about your behavior at work differently in wake of #MeToo?") +
+  xlab("Child status") +
+  ylab("Proportion") +
+  labs(fill = "") # a sneaky way to leave the legend title blank
+```
+
+In order to test for a significant difference in proportion of "Yes" responses, we need to consider the null distribution where there is no difference between the groups. In this world, child status has no effect on how the respondents answer, so we can "build" a null distribution of 1000's of samples by shuffling or *randomizing* the existing responses.
+
+> Students can actually do this with small samples and a deck of cards to see the effect of randomization from an original sample. [Dolphin example](https://jroith.shinyapps.io/DolphinLabTutorial/)
+
+We use the package `infer` to do this randomization and build the null distribution for us. This approach can be used for almost any traditional inference test and follows a typical format:
+
+1. Assign the simulated samples to an R object
+
+2. `specify` the relationship (`response ~ explanatory`)
+
+3. `hypothesize` what it is you are testing
+
+4. `generate` the new samples by mixing up the original one
+
+5. `calculate` the test statistic
+
+```{r}
+null_distn <- masc_props %>%                        # we are creating lots of samples from the original
+  specify(behaveDiff ~ kids, success = "Yes") %>%  # state the response var. outcome of interest (Yes)
+  hypothesize(null = "independence") %>%           # a diff in props test is really about independence
+  generate(reps = 1000, type = "permute") %>%      # the larger the reps, the longer R runs
+  calculate(stat = "diff in props", order = c("Has children", "No children"))  # order to take the diff
+
+# For any of these lines, to get the "legal" arguments you can run the function proceeded by ?
+?calculate
+```
+
+Running this code you notice nothing is printed, but you've created the null distribution. In order to see it we need to `visualize`. Let's also add a line on the null distribution that represents the observed difference in proportions.
+
+```{r}
+# Using the tally() code from 2 chunks ago, I can get the group proportions
+observed_prop_diff <- 0.3285 - 0.3494    # Has children (yes) - No children (yes) to keep order consistent
+
+null_distn %>%
+  visualize() +
+  shade_p_value(observed_prop_diff, direction = "both")   # to visualize the p-value
+```
+
+
+Now students can see what the sample difference in proportions might look like if there were no real difference between the proportions of responding yes. They can also see where our observed sample lands and whether it seems unusual or plausible to occur by random chance. In this case our observed difference of -0.021 does not seem to be strong evidence against the null hypothesis. 
+
+In order to get the p-value, we don't need a theoretical distribution, R will simply count the number of samples out of 1000 that have a difference more extreme than -0.021.
+
+```{r}
+null_distn %>%
+  get_p_value(obs_stat = observed_prop_diff, direction = "both")
+```
+
+
+And that is a difference in proportion test using randomization!
+
+```{r}
+# As a comparison this is what the result is from prop.test()
+prop.test(behaveDiff ~ kids, data = masc_props)  # p-values will vary because we are randomizing
+# also notice the proportion tracked is the proportion of answering "No" since R will select
+# the success category alphabetically
+```
+
+
+
+## Chi-square Test of Independence
+
+Here's another look at the question: *How often do you try to be the one who pays when on a date?*. We consider the responses to this by age group.
+
+```{r}
+# Create a table of counts
+tally(payDate ~ age3, data = masc_infer)
+
+# Visualize any differences between groups
+ggplot(masc_infer, aes(x = age3, fill = payDate)) + 
+  geom_bar(position = "fill") +
+  ggtitle("How often do you offer to pay on the first date?") +
+  xlab("Age of respondent") +
+  ylab("Proportion") +
+  labs(fill = "")
+```
+
+Using the `infer` package, the randomization test looks like this (note that we are back to using the `masc_infer` data frame):
+
+```{r}
+# We can calculate the test statistic directly without generating the null distribution
+observed_indep_statistic <- masc_infer %>%
+  specify(payDate ~ age3) %>%
+  calculate(stat = "Chisq")
+
+observed_indep_statistic
+```
+
+```{r}
+# Generate the null distribution
+null_distribution_simulated <- masc_infer %>%
+  specify(payDate ~ age3) %>%             # No need to state the success category
+  hypothesize(null = "independence") %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate(stat = "Chisq")               # No need to state the order anymore
+```
+
+```{r}
+# Visualize the null distribution of test statistics
+null_distribution_simulated %>%
+  visualize() +    # try visualize(method = "both") for the theoretical curve
+  shade_p_value(observed_indep_statistic,
+                direction = "greater")
+```
+
+```{r}
+# Calculate the p-value
+p_value_independence <- null_distribution_simulated %>%
+  get_p_value(obs_stat = observed_indep_statistic,
+              direction = "greater")
+
+p_value_independence
+```
+
+```{r}
+# Theoretical approach
+counts_table <- tally(payDate ~ age3, data = masc_infer)
+chisq.test(counts_table)
+```
+
+
+## T-test for difference in means
+
+Using Average sleep and whether the student has an early class.
+
+```{r}
+# This code changes EarlyClass from numeric (0/1) to a categorical variable
+sleep <- sleep %>%
+  mutate(EarlyClass = ifelse(EarlyClass == 1, "Early Class", "Late Class"))
+
+# Summary stats and plot
+df_stats(~ AverageSleep | EarlyClass, data = sleep)
+gf_boxplot(AverageSleep ~ EarlyClass, data = sleep, fill = ~ EarlyClass) %>%
+  gf_jitter(width = 0.05, alpha = 0.25)
+
+# First, calculate the statistic
+t_stat <- sleep %>%
+  specify(AverageSleep ~ EarlyClass) %>%
+  calculate("t", order = c("Early Class", "Late Class"))
+
+# Generate the null distribution
+null_distn <- sleep %>%
+  specify(AverageSleep ~ EarlyClass) %>%
+  hypothesize(null = "independence") %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate("t", order = c("Early Class", "Late Class"))
+  
+# Visualize the null distribution with observed test stat
+null_distn %>%
+  visualize() +
+  shade_p_value(obs_stat = t_stat, direction = "both")
+
+# Calculate p-value
+null_distn %>%
+  get_p_value(obs_stat = t_stat, direction = "both")
+```
+
+Run the line `vignette("infer")` for more examples.
+
+```{r}
+# vignette("infer")
+```
+
+

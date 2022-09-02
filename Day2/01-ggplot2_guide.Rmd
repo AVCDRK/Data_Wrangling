@@ -1,0 +1,339 @@
+---
+title: "Basics of plotting with ggplot2"
+subtitle: "StatPREP R Workshops 2021"
+author: "Joe Roith"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)         # packages for wrangling tidy data
+library(ggplot2)           # powerful graphics package
+library(gapminder)         # contains data set we'll use
+```
+
+## Why ggplot2?
+
+Creating plots is not necessarily hard in R. But creating aesthetically pleasing, customizable plots in R can be one of the most complex pieces of code you ever write. We will be covering some conceptual ideas and really break down what makes a visualization while learning to use `ggplot()`. But I won't cover ALL of the different plots, I'll focus more on how to think about incorporating your data to help tell your story. Rather than trying to memorize the functions and code, pay attention to the structure and how we build a plot.
+
+We will start with a dataset from the `gapminder` library, made famous by Hans Rosling. The library was loaded in our setup R chunk, but let's look at the data and it's documentation. Pay attention to the variables and their types. Consider possible ways to plot them or use them in plots.
+
+```{r}
+View(gapminder)
+?gapminder
+```
+
+
+
+## Build a plot layer by layer - the necessities
+
+First, identify the dataset you will use in the `ggplot()` function. This information is being saved in the object `p`.
+
+```{r}
+p <- ggplot(data = gapminder)
+```
+
+### 1. Map your variables
+
+Identify the variables you want to use on the `x` and `y` axes in the aesthetics specification `aes()`. Always map variables to graph attributes inside an `aes().` Here give the `ggplot()` function two arguments instead of one: `data` and `mapping`. Both are saved in the object `p`:
+
+```{r}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp))  # using multiple lines organizes things, but mind your ,'s and ()'s
+```
+
+Since the plot is being saved as `p`, we need to explicitly ask for it to see what it produces so far. We see an empty canvas. This empty plot has no `geom` statement, so there's no data to see yet. We can reuse this empty canvas whenever we use `p` and add various graphs or various versions of our graph to it.
+
+```{r}
+p
+```
+
+### 2. Choose `geom` (the geometry) for your data
+
+Graph a point for each combination of `x` and `y` (GDP and life expectancy, respectively). Use a plus sign (`+`) after the `p` object below and add the geom statement for points:
+
+- For scatterplots use: `geom_point()`
+
+```{r}
+p + geom_point() 
+
+# Why don't we have any arguments in geom_point()?
+
+# BTW this already looks nicer than the base R function
+plot(gapminder$gdpPercap, gapminder$lifeExp)
+```
+
+### 3. Add a title to your plot
+
+To put a title above the plot use another plus sign at the end of the last line and add:
+
+`labs(title = "A scatterplot of Life Expectancy vs GDP")`
+
+```{r}
+p + geom_point() +
+  labs(title = "A scatterplot of Life Expectancy vs GDP")
+```
+
+
+## Modify your plot
+
+### 1. Change the `geom` statement to show a trend line
+
+Add the geom attribute for a trend line (instead of the points):
+
+- For a trend line use: `geom_smooth()`
+
+Also, we'll update the title of our plot to read:
+
+"Life Expectancy vs GDP: Trend line"
+
+```{r}
+p + geom_smooth() +
+  labs(title = "Life Expectancy vs GDP: Trend line")
+```
+
+### 2. Use multiple `geom` statements:
+
+Add the `geom` attributes for both a trend line and points:
+
+Also, update the title of our plot to read:
+
+"Life Expectancy vs GDP: Data points and Trend line."
+
+```{r}
+p + geom_point() + 
+    geom_smooth() +
+    labs(title = "Life Expectancy vs GDP: Data points and Trend line")
+```
+
+
+### 3. Make other adjustments
+
+It seems like a log transformation may be appropriate for GDP here.
+
+`scale_x_log10()`: Some layers adjust only the x or y axis.
+
+We change the title of our plot to read:
+
+"Life Expectancy vs GDP scatterplot: log scale for x-axis."
+
+```{r}
+# Just a reminder of our original canvas
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp))
+p + geom_point() +
+    geom_smooth() +
+    scale_x_log10() +
+    labs(title = "Life Expectancy vs GDP scatterplot: log scale for x-axis")
+```
+
+### 4. The added layers can take arguments
+
+Let's get better tick labels
+
+`scale_x_log10(labels = scales::dollar)`
+
+Change the title of the plot to read:
+
+"Life Expectancy vs GDP scatterplot: log scale on x-axis, dollar ticks."
+
+```{r 03-make-a-plot-11, out.width="60%"}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x = gdpPercap, y = lifeExp))
+
+p + geom_point() +
+    geom_smooth() +
+    scale_x_log10(labels = scales::dollar) +    # another way to refer to a function in a library without loading is to use '::'. dollar is a function in the package scales
+    labs(title = "Life Expectancy vs GDP: log scale on x-axis, US$ ticks")
+```
+
+### 5. Polish your plot with proper labels
+
+A polished plot of Life Expectancy vs GDP should have proper labels on the x and y access (not the just the variable names), titles, subtitles and indicate the source of the data.
+
+Add the following to the `labs()` specification:
+
+`x = "GDP Per Capita (log scale - US$)"`
+`y = "Life Expectancy in Years"`
+`subtitle = "Data points are country-years"`
+`caption = "Source: Gapminder"`
+
+```{r}
+p + geom_point() + 
+    geom_smooth() +
+    scale_x_log10(labels = scales::dollar) +
+    labs(x = "GDP Per Capita (log scale - US$)", y = "Life Expectancy in Years",
+         title = "Economic Growth and Life Expectancy",
+         subtitle = "Data points are country-years",
+         caption = "Source: Gapminder.")
+```
+
+#### Can you create side by side boxplots using `geom_boxplot()` for the life expectancy by continent?
+
+What other labels and features might you add?
+
+```{r}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = ,
+                          y = ))
+p + 
+```
+
+
+## Add more aesthetics and attributes
+
+Liven up your plots by changing shape, size, color, and transparency.
+
+
+### 1. Add more attributes to the plot
+
+- `color`: The line/outline/point color. Use arguments like "lightblue" (there are lists of acceptable color names out there)
+
+- `fill`: The fill color.
+
+- `alpha`: The transparency of the plot, takes values from 0 to 1.
+
+- `shape`: The shape of points
+
+- `size`: The size of the geom
+
+- `linetype`: The style of the line
+
+```{r}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x = gdpPercap, y = lifeExp))
+
+p + geom_point(color = "purple", alpha = 0.3) +
+    geom_smooth(color = "orange", size = 6, linetype = 2) +
+    scale_x_log10(labels = scales::dollar) +
+    labs(x = "GDP Per Capita (log scale - US$)", y = "Life Expectancy in Years",
+         title = "Economic Growth and Life Expectancy",
+         subtitle = "Data points are country-years",
+         caption = "Source: Gapminder.")
+```
+
+
+### 2. Add attributes to your smoother
+
+Certain `geoms` have their own arguments and attributes. You can always run `?geom_smooth()` to find out the specifics.
+
+Add the following to the smoother and see what happens.
+
+`se = FALSE` to remove the shading for the standard error
+
+
+```{r}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp)) 
+
+p + geom_point(color = "purple", alpha = 0.3) +
+    geom_smooth(color = "orange", size = 6, 
+                se = FALSE, linetype = 2) +
+    scale_x_log10(labels = scales::dollar) +
+    labs(x = "GDP Per Capita (log scale - US$)", y = "Life Expectancy in Years",
+         title = "Economic Growth and Life Expectancy",
+         subtitle = "Data points are country-years",
+         caption = "Source: Gapminder.")
+```
+
+
+
+### 3. Mapping variables to aesthetics
+
+Say, we want color each of the points to reflect the `continent` to which the `country` belongs, we can add another aesthetic. Map `color` the variable `continent`.
+
+`color = continent`
+
+In this case, we want the continent color to be a global aesthetic, so it can go in the original `ggplot`
+
+```{r}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp,
+                          color = continent))
+p + geom_point(alpha = 0.3) +       # be sure to remove the color argument here
+    geom_smooth(color = "orange") +
+    scale_x_log10(labels = scales::dollar) +
+    labs(x = "GDP Per Capita (log scale - US$)", y = "Life Expectancy in Years",
+         title = "Economic Growth and Life Expectancy",
+         subtitle = "Data points are country-years",
+         caption = "Source: Gapminder.")
+```
+
+Make shading around the trend lines to match the point color
+
+Again, map `continent` to the `color` aesthetic. Also map the standard error shading around the trend lines to have the same `continent` coloring using the `fill` aesthetic in the global ggplot statement.
+
+`color = continent` `fill = continent`
+
+```{r}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp,
+                          color = continent,
+                          fill = continent))
+
+p + geom_point(alpha = 0.3) +     
+    geom_smooth() +
+    scale_x_log10(labels = scales::dollar) +
+    labs(x = "GDP Per Capita (log scale - US$)", y = "Life Expectancy in Years",
+         title = "Economic Growth and Life Expectancy",
+         subtitle = "Data points are country-years",
+         caption = "Source: Gapminder.")
+```
+
+### 4. Aesthetics can be mapped per geom
+
+Map `continent` to color the points but not the smoother.
+
+Generally, the `aes()` specification for the variables in the main `ggplot()` function will be inherited by any `geom` associated with it.
+
+However, we can choose to override the `ggplot()` `aes()` by specifying another `aes()` within a `geom` as we have here for `geom_point()`.
+
+
+```{r}
+# Be sure to reset the canvas
+p <- ggplot(data = gapminder, 
+            mapping = aes(x = gdpPercap, 
+                          y = lifeExp))
+
+p + geom_point(mapping = aes(color = continent), alpha = 0.3) +
+    geom_smooth() +
+    scale_x_log10(labels = scales::dollar) +
+    labs(x = "GDP Per Capita (log scale - US$)", y = "Life Expectancy in Years",
+         title = "Economic Growth and Life Expectancy",
+         subtitle = "Data points are country-years",
+         caption = "Source: Gapminder.")
+```
+
+### 5. Facet to split plots into windows or panes
+
+It is often useful to separate groups in order to better see individual trends. `facet_grid()` allows you to do this using an existing variable.
+
+```{r}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp,
+                          color = continent,
+                          fill = continent))
+
+p + facet_grid(~ continent) +    # when using a variable name outside of the aes(), precede it with an '~'
+    geom_point(alpha = 0.3) +     
+    geom_smooth() +
+    scale_x_log10(labels = scales::dollar) +
+    labs(x = "GDP Per Capita (log scale - US$)", y = "Life Expectancy in Years",
+         title = "Economic Growth and Life Expectancy",
+         subtitle = "Data points are country-years",
+         caption = "Source: Gapminder.")
+```
+
+## What other plots could we create with the gapminder data?
+
+```{r}
+
+```
+
+
+

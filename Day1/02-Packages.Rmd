@@ -1,0 +1,66 @@
+---
+title: "Downloading and installing packages"
+subtitle: "StatPREP R Workshops 2021"
+author: "Joe Roith"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Your Workspace
+
+This is an R Markdown document. It has the convenience of combining a text editor (like Word or Google Docs) with R for writing and executing code directly in the document. The code sections are distinguished by *chunks* like the one below.
+
+```{r}
+1+1
+10^3
+
+# Anything in this chunk can be run through R. Unless the line has a '#' in front, this signifies a comment
+# Press the green play arrow on the upper right side of this chunk. How much code ran?
+# Place your cursor on the 1+1 line and press Ctrl/Cmd + Enter/Return. Now how much code ran?
+```
+
+Statisticians use these documents as a workspace for writing, editing, commenting, organizing, and publishing their data analysis. We even create professional looking documents with simple tricks for creating **bold** or *italic* emphasis, among other things. Look for the **Knit** button at the top of the pane, click it and watch RStudio knit text and code seamlessly together.
+
+
+## Packages
+
+Most often we use these documents to work on code in an organized place. Since R is open sourced, anyone can write their own specialized functions. If we want to use code someone else created, we need to download and install their packages.
+
+```{r, eval = FALSE}
+# You do not need to run this code today, the packages are already installed in this project
+# Once you start your own projects or download RStudio desktop, you will need to run lines like this
+
+install.packages(c("tidyverse", "ggplot2", "fivethirtyeight", "infer")) 
+
+# packages only need to be installed once per project on RStudio Cloud and once ever on RStudio Desktop
+```
+
+
+In order to use the functions in those packages, you need to load them into your current session. Most documents with R code have a `setup` R chunk like this at the beginning where they load all of the package they will need.
+
+```{r, include = FALSE}
+library("tidyverse") # and writing these lines is not enough, you need to run them first
+library("ggplot2")
+library("fivethirtyeight")
+library("infer")
+```
+
+It's not uncommon to have a dozen or more packages loaded right at the beginning of your code.
+
+> Pro-tip: You can name R chunks to distinguish them. And you can suppress all of the loading messages from your knitted document using `include = FALSE`. The code runs, but is not included in the final doc.
+
+
+### More useful packages
+
+| Package name      | Description                                                  |
+| :---------------- | :----------------------------------------------------------- |
+| `MASS`            | Data sets and useful functions                               |
+| `mosaic`          | Useful functions for everyday stats                          |
+| `ggformula`       | Functions for getting stats and plots using formula notation |
+
+
+
+
+
+
